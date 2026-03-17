@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados - Búsqueda de Negocios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Resultados de Búsqueda</h1>
+            <a href="/" class="btn-back">← Volver a Búsqueda</a>
+        </header>
+
+        {% if error %}
+        <div class="card error-card">
+            <h2>❌ Error</h2>
+            <p>{{ error }}</p>
+            <a href="/" class="btn-primary">Volver al Inicio</a>
+        </div>
+        {% else %}
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">Negocios Encontrados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.with_phone }}</div>
+                <div class="stat-label">Con Teléfono</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.with_address }}</div>
+                <div class="stat-label">Con Dirección</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.with_website }}</div>
+                <div class="stat-label">Con Sitio Web</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>💼 Lista de Negocios</h2>
+                <div class="view-controls">
+                    <button class="btn-view active" onclick="switchView('cards')" id="btnCards">
+                        🗂️ Tarjetas
+                    </button>
+                    <button class="btn-view" onclick="switchView('table')" id="btnTable">
+                        📊 Tabla
+                    </button>
+                    <a href="/download/{{ stats.filename }}" class="btn-secondary" download>
+                        ⬇ Descargar CSV
+                    </a>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Filtrar negocios..." onkeyup="filterBusinesses()">
+            </div>
+
+            <!-- Vista de Tarjetas -->
+            <div class="businesses-grid" id="businessesGrid">
+                {% for business in businesses %}
+                <div class="business-card" data-name="{{ business.nombre|lower }}">
+                    <div class="business-header">
+                        <h3>{{ business.nombre }}</h3>
+                    </div>
+
+                    <div class="business-info">
+                        <div class="info-item">
+                            <span class="info-icon">📞</span>
+                            {% if business.telefono and business.telefono != 'N/A' %}
+                            <span class="info-text">{{ business.telefono }}</span>
+                            {% else %}
+                            <span class="info-text info-missing">No disponible</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-icon">📍</span>
+                            {% if business.direccion and business.direccion != 'N/A' %}
+                            <span class="info-text">{{ business.direccion }}</span>
+                            {% else %}
+                            <span class="info-text info-missing">No disponible</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-icon">🌐</span>
+                            {% if business.website and business.website != 'N/A' %}
+                            <a href="{{ business.website }}" target="_blank" class="info-link">
+                                {{ business.website|truncate(50) }}
+                            </a>
+                            {% else %}
+                            <span class="info-text info-missing">No disponible</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="business-actions">
+                        <a href="{{ business.google_maps_url }}" target="_blank" class="btn-maps">
+                            Ver en Google Maps
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if businesses|length == 0 %}
+            <div class="no-results">
+                <p>No se encontraron negocios en esta búsqueda.</p>
+            </div>
+            {% endif %}
+
+            <!-- Vista de Tabla -->
+            <div class="table-container" id="tableView" style="display: none;">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th>Sitio Web</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for business in businesses %}
+                        <tr class="table-row" data-name="{{ business.nombre|lower }}">
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ business.nombre }}</strong></td>
+                            <td>
+                                {% if business.telefono and business.telefono != 'N/A' %}
+                                {{ business.telefono }}
+                                {% else %}
+                                <span class="info-missing">No disponible</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if business.direccion and business.direccion != 'N/A' %}
+                                {{ business.direccion }}
+                                {% else %}
+                                <span class="info-missing">No disponible</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if business.website and business.website != 'N/A' %}
+                                <a href="{{ business.website }}" target="_blank" class="info-link">{{ business.website|truncate(30) }}</a>
+                                {% else %}
+                                <span class="info-missing">No disponible</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ business.google_maps_url }}" target="_blank" class="btn-table-action">
+                                    🗺️ Maps
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <script>
+        let currentView = 'cards';
+
+        function switchView(view) {
+            const cardsView = document.getElementById('businessesGrid');
+            const tableView = document.getElementById('tableView');
+            const btnCards = document.getElementById('btnCards');
+            const btnTable = document.getElementById('btnTable');
+
+            if (view === 'cards') {
+                cardsView.style.display = 'grid';
+                tableView.style.display = 'none';
+                btnCards.classList.add('active');
+                btnTable.classList.remove('active');
+            } else {
+                cardsView.style.display = 'none';
+                tableView.style.display = 'block';
+                btnCards.classList.remove('active');
+                btnTable.classList.add('active');
+            }
+            currentView = view;
+        }
+
+        function filterBusinesses() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+
+            if (currentView === 'cards') {
+                const cards = document.querySelectorAll('.business-card');
+                cards.forEach(card => {
+                    const name = card.getAttribute('data-name');
+                    if (name.includes(filter)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            } else {
+                const rows = document.querySelectorAll('.table-row');
+                rows.forEach(row => {
+                    const name = row.getAttribute('data-name');
+                    if (name.includes(filter)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Copiar información al portapapeles
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copiado al portapapeles: ' + text);
+            });
+        }
+    </script>
+</body>
+</html>
