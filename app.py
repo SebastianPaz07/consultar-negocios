@@ -22,6 +22,9 @@ import threading
 
 app = Flask(__name__)
 
+# Crear directorio data si no existe (para Vercel)
+os.makedirs('data', exist_ok=True)
+
 # Variable global para almacenar el estado de la búsqueda
 search_status = {
     'running': False,
