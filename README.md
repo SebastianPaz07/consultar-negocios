@@ -18,7 +18,21 @@ Aplicación con **interfaz web** y **CLI** para buscar negocios en Google Maps y
 - ✅ **Sin necesidad de API keys o cuentas**
 - ✅ **Completamente GRATIS**
 
-## 🚀 Requisitos Previos
+## 🌐 Modos de Uso
+
+Esta aplicación puede usarse de **dos formas**:
+
+### 1️⃣ **En la Nube** (Acceso desde cualquier computador) 🌍
+Despliega la aplicación en servicios gratuitos como Render o Railway y accede desde cualquier lugar con internet.
+
+**👉 [Ver Guía de Deployment Completa](DEPLOYMENT.md)**
+
+### 2️⃣ **Localmente** (Solo en tu computador) 💻
+Ejecuta la aplicación en tu máquina local siguiendo las instrucciones de instalación abajo.
+
+---
+
+## 🚀 Requisitos Previos (Para Uso Local)
 
 - Python 3.8 o superior
 - Conexión a Internet

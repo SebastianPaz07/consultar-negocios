@@ -168,11 +168,16 @@ if __name__ == '__main__':
     # Crear directorio data si no existe
     os.makedirs('data', exist_ok=True)
 
-    print("\n" + "="*70)
-    print("🌐 SERVIDOR WEB - BÚSQUEDA DE NEGOCIOS EN GOOGLE MAPS")
-    print("="*70)
-    print("📍 Abre tu navegador en: http://localhost:5000")
-    print("⌨  Presiona Ctrl+C para detener el servidor")
-    print("="*70 + "\n")
+    # Detectar si estamos en desarrollo o producción
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('DEBUG', 'True') == 'True'
 
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    if debug:
+        print("\n" + "="*70)
+        print("🌐 SERVIDOR WEB - BÚSQUEDA DE NEGOCIOS EN GOOGLE MAPS")
+        print("="*70)
+        print("📍 Abre tu navegador en: http://localhost:5000")
+        print("⌨  Presiona Ctrl+C para detener el servidor")
+        print("="*70 + "\n")
+
+    app.run(debug=debug, host='0.0.0.0', port=port)
