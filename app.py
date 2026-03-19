@@ -14,6 +14,7 @@ if sys.platform == 'win32':
 from flask import Flask, render_template, request, jsonify, send_file
 from src.google_maps_scraper import GoogleMapsScraper
 from src.data_exporter import DataExporter
+from src.message_strategies import get_message_for_business, personalize_message
 import os
 import glob
 import pandas as pd
@@ -125,6 +126,13 @@ def results():
                     business[key] = str(business[key]) if business[key] != 'N/A' else 'N/A'
                 business[key] = business[key].strip() if business[key] != 'N/A' else 'N/A'
 
+        # Asignar estrategia de mensaje a cada negocio
+        for idx, business in enumerate(businesses):
+            strategy = get_message_for_business(idx)
+            personalized = personalize_message(strategy, business.get('nombre', 'N/A'))
+            business['message_strategy'] = personalized
+            business['business_index'] = idx
+
         # Información adicional
         stats = {
             'total': len(businesses),
@@ -147,6 +155,46 @@ def download(filename):
     if os.path.exists(filepath):
         return send_file(filepath, as_attachment=True)
     return 'Archivo no encontrado', 404
+
+@app.route('/download-excel')
+def download_excel():
+    """Generar y descargar archivo Excel con mensajes y estrategias"""
+    # Buscar el archivo CSV más reciente
+    csv_files = glob.glob('data/*.csv')
+
+    if not csv_files:
+        return 'No hay resultados disponibles', 404
+
+    latest_file = max(csv_files, key=os.path.getctime)
+
+    try:
+        # Leer CSV y reemplazar NaN con 'N/A'
+        df = pd.read_csv(latest_file, encoding='utf-8-sig')
+        df = df.fillna('N/A')
+        businesses = df.to_dict('records')
+
+        # Limpiar y validar datos
+        for business in businesses:
+            for key in business:
+                if not isinstance(business[key], str):
+                    business[key] = str(business[key]) if business[key] != 'N/A' else 'N/A'
+                business[key] = business[key].strip() if business[key] != 'N/A' else 'N/A'
+
+        # Asignar estrategia de mensaje a cada negocio
+        for idx, business in enumerate(businesses):
+            strategy = get_message_for_business(idx)
+            personalized = personalize_message(strategy, business.get('nombre', 'N/A'))
+            business['message_strategy'] = personalized
+            business['business_index'] = idx
+
+        # Generar Excel
+        excel_filepath = DataExporter.to_excel(businesses)
+
+        return send_file(excel_filepath, as_attachment=True, download_name=os.path.basename(excel_filepath))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f'Error al generar Excel: {str(e)}', 500
 
 @app.route('/history')
 def history():

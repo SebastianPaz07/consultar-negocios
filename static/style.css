@@ -503,3 +503,484 @@ header p {
         padding: 8px;
     }
 }
+
+/* ============================================
+   MODAL DE CONTACTO
+   ============================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    max-width: 1000px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: white;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 2em;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* Badge de estrategia */
+.message-strategy-badge {
+    position: sticky;
+    top: 85px;
+    background: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 0.5px;
+    z-index: 9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.message-strategy-badge span {
+    display: inline-block;
+}
+
+/* Cuerpo del modal */
+.modal-body {
+    padding: 40px 50px;
+}
+
+/* Sección de información del negocio */
+.business-details {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #e8e8e8;
+}
+
+.business-details h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.detail-item {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.detail-item strong {
+    min-width: 100px;
+    color: #555;
+}
+
+.detail-item span,
+.detail-item a {
+    color: #333;
+    word-break: break-word;
+}
+
+/* Sección de caso de uso */
+.use-case-section {
+    background: #f0f7ff;
+    border-left: 4px solid #2196F3;
+    border-radius: 8px;
+    padding: 20px 25px;
+    margin-bottom: 30px;
+}
+
+.use-case-section h3 {
+    color: #1976D2;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.use-case-section p {
+    color: #555;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Sección de mensaje */
+.message-section {
+    margin-bottom: 30px;
+}
+
+.message-section h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.message-box {
+    background: #fafafa;
+    border: 1px solid #d0d0d0;
+    border-radius: 10px;
+    padding: 25px;
+    font-size: 1.05em;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.btn-copy {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    font-size: 1em;
+}
+
+.btn-copy:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Sección de videos */
+.videos-section {
+    background: #fffbf5;
+    border-left: 4px solid #FF9800;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.videos-section h3 {
+    color: #F57C00;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.video-timing-item {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+}
+
+.video-timing-item strong {
+    color: #E65100;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.video-timing-item p {
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Recomendaciones */
+.recommendations-section {
+    background: #fffef7;
+    border-left: 4px solid #FFC107;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.recommendations-section h3 {
+    color: #F57C00;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+}
+
+.recommendation-item {
+    margin-bottom: 15px;
+}
+
+.recommendation-item strong {
+    color: #E65100;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.recommendation-item p {
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.recommendation-list {
+    margin-bottom: 15px;
+}
+
+.recommendation-list strong {
+    color: #E65100;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.recommendation-list ul {
+    margin: 10px 0 0 20px;
+    color: #555;
+}
+
+.recommendation-list li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.recommendation-item.followup {
+    background: #fff5f8;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 3px solid #E91E63;
+}
+
+/* Acciones del modal */
+.modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn-contacted {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1em;
+}
+
+.btn-contacted:hover:not(:disabled) {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-contacted.already-contacted {
+    background: #9E9E9E;
+    cursor: not-allowed;
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+}
+
+.btn-whatsapp:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+}
+
+/* Badge de contactado en tarjetas */
+.business-card {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.business-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.business-card.contacted {
+    opacity: 0.75;
+    border: 2px solid #4CAF50;
+    background: #f1f8f4;
+}
+
+.contacted-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #4CAF50;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    z-index: 2;
+}
+
+/* Badges en las cards */
+.business-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.card-badges {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.message-type-badge {
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Filtro de búsqueda */
+.search-box {
+    margin-bottom: 20px;
+}
+
+.filter-options {
+    margin-top: 15px;
+}
+
+.filter-checkbox {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1em;
+    color: #555;
+    user-select: none;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.filter-checkbox span {
+    font-weight: 500;
+}
+
+/* Responsive para modal */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-header {
+        padding: 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.2em;
+    }
+
+    .modal-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .message-strategy-badge {
+        font-size: 0.95em;
+        padding: 10px 15px;
+    }
+
+    .business-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .card-badges {
+        align-self: flex-end;
+    }
+}

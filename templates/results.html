@@ -50,22 +50,37 @@
                     <button class="btn-view" onclick="switchView('table')" id="btnTable">
                         📊 Tabla
                     </button>
-                    <a href="/download/{{ stats.filename }}" class="btn-secondary" download>
-                        ⬇ Descargar CSV
+                    <a href="/download-excel" class="btn-secondary" download>
+                        📥 Descargar Excel
                     </a>
                 </div>
             </div>
 
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="🔍 Filtrar negocios..." onkeyup="filterBusinesses()">
+                <div class="filter-options">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="filterPhone" onchange="filterBusinesses()">
+                        <span>Solo con teléfono</span>
+                    </label>
+                </div>
             </div>
 
             <!-- Vista de Tarjetas -->
             <div class="businesses-grid" id="businessesGrid">
                 {% for business in businesses %}
-                <div class="business-card" data-name="{{ business.nombre|lower }}">
+                <div class="business-card"
+                     data-name="{{ business.nombre|lower }}"
+                     data-business-index="{{ business.business_index }}"
+                     data-has-phone="{{ 'true' if business.telefono and business.telefono != 'N/A' else 'false' }}"
+                     onclick="openContactModal({{ business.business_index }})">
                     <div class="business-header">
                         <h3>{{ business.nombre }}</h3>
+                        <div class="card-badges">
+                            <span class="message-type-badge" style="background-color: {{ business.message_strategy.color }}">
+                                M{{ business.message_strategy.id }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="business-info">
@@ -168,9 +183,257 @@
         {% endif %}
     </div>
 
+    <!-- MODAL DE CONTACTO -->
+    <div id="contactModal" class="modal" style="display: none;">
+        <div class="modal-overlay" onclick="closeContactModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalBusinessName"></h2>
+                <button class="modal-close" onclick="closeContactModal()">&times;</button>
+            </div>
+
+            <div class="message-strategy-badge" id="strategyBadge">
+                <span id="strategyName"></span>
+            </div>
+
+            <div class="modal-body">
+                <!-- Información del negocio -->
+                <div class="business-details">
+                    <h3>📋 Información del Negocio</h3>
+                    <div class="detail-item">
+                        <strong>Teléfono:</strong>
+                        <span id="modalPhone"></span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Dirección:</strong>
+                        <span id="modalAddress"></span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Website:</strong>
+                        <span id="modalWebsite"></span>
+                    </div>
+                </div>
+
+                <!-- Caso de uso recomendado -->
+                <div class="use-case-section">
+                    <h3>🎯 Caso de Uso Ideal</h3>
+                    <p id="useCaseText"></p>
+                </div>
+
+                <!-- Mensaje sugerido -->
+                <div class="message-section">
+                    <h3>💬 Mensaje Sugerido para WhatsApp</h3>
+                    <div class="message-box" id="messageText"></div>
+                    <button class="btn-copy" onclick="copyMessage()">
+                        📋 Copiar Mensaje
+                    </button>
+                </div>
+
+                <!-- Timing de videos -->
+                <div class="videos-section">
+                    <h3>🎥 Cuándo Enviar los Videos</h3>
+                    <div class="video-timing-item">
+                        <strong>Video 1 - Flujo de Reservas:</strong>
+                        <p id="videoReservasText"></p>
+                    </div>
+                    <div class="video-timing-item">
+                        <strong>Video 2 - Consulta de Estado:</strong>
+                        <p id="videoEstadoText"></p>
+                    </div>
+                </div>
+
+                <!-- Recomendaciones -->
+                <div class="recommendations-section">
+                    <h3>💡 Estrategia de Contacto</h3>
+                    <div class="recommendation-list">
+                        <strong>Recomendaciones:</strong>
+                        <ul id="recommendationsList"></ul>
+                    </div>
+                    <div class="recommendation-item followup">
+                        <strong>Seguimiento si no responde:</strong>
+                        <p id="followupText"></p>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="modal-actions">
+                    <button class="btn-contacted" id="contactedBtn" onclick="markAsContacted()">
+                        ✓ Marcar como Contactado
+                    </button>
+                    <a id="whatsappLink" href="#" target="_blank" class="btn-whatsapp">
+                        📱 Abrir WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentView = 'cards';
+        let businessData = {{ businesses|tojson|safe }} || [];
+        let currentBusinessIndex = null;
 
+        // ===== FUNCIONES DE LOCALSTORAGE =====
+        function getContactedBusinesses() {
+            const contacted = localStorage.getItem('contactedBusinesses');
+            return contacted ? JSON.parse(contacted) : {};
+        }
+
+        function saveContactedBusiness(index) {
+            const contacted = getContactedBusinesses();
+            contacted[index] = {
+                timestamp: new Date().toISOString(),
+                businessName: businessData[index].nombre
+            };
+            localStorage.setItem('contactedBusinesses', JSON.stringify(contacted));
+        }
+
+        function isContacted(index) {
+            const contacted = getContactedBusinesses();
+            return contacted.hasOwnProperty(index);
+        }
+
+        // ===== MARCAR CONTACTADOS AL CARGAR =====
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!businessData || businessData.length === 0) return;
+
+            businessData.forEach((business, index) => {
+                if (isContacted(index)) {
+                    const card = document.querySelector(`[data-business-index="${index}"]`);
+                    if (card && !card.querySelector('.contacted-badge')) {
+                        card.classList.add('contacted');
+                        const badge = document.createElement('div');
+                        badge.className = 'contacted-badge';
+                        badge.innerHTML = '✓ Contactado';
+                        card.insertBefore(badge, card.firstChild);
+                    }
+                }
+            });
+        });
+
+        // ===== FUNCIONES DE MODAL =====
+        function openContactModal(index) {
+            currentBusinessIndex = index;
+            const business = businessData[index];
+            const strategy = business.message_strategy;
+
+            // Información del negocio
+            document.getElementById('modalBusinessName').textContent = business.nombre;
+            document.getElementById('modalPhone').textContent = business.telefono;
+            document.getElementById('modalAddress').textContent = business.direccion;
+
+            const websiteEl = document.getElementById('modalWebsite');
+            if (business.website && business.website !== 'N/A') {
+                websiteEl.innerHTML = `<a href="${business.website}" target="_blank">${business.website}</a>`;
+            } else {
+                websiteEl.textContent = 'No disponible';
+            }
+
+            // Badge de estrategia
+            const badge = document.getElementById('strategyBadge');
+            const strategyName = document.getElementById('strategyName');
+            strategyName.textContent = `MENSAJE ${strategy.id}: ${strategy.nombre}`;
+            badge.style.backgroundColor = strategy.color;
+
+            // Caso de uso
+            document.getElementById('useCaseText').textContent = strategy.caso_uso;
+
+            // Mensaje personalizado
+            document.getElementById('messageText').textContent = strategy.mensaje_personalizado;
+
+            // Timing de videos
+            document.getElementById('videoReservasText').textContent = strategy.timing_videos.video_reservas;
+            document.getElementById('videoEstadoText').textContent = strategy.timing_videos.video_estado;
+
+            // Recomendaciones
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = strategy.recomendaciones
+                .map(rec => `<li>${rec}</li>`)
+                .join('');
+
+            // Seguimiento
+            document.getElementById('followupText').textContent = strategy.seguimiento_personalizado;
+
+            // Botón de contactado
+            const contactedBtn = document.getElementById('contactedBtn');
+            if (isContacted(index)) {
+                contactedBtn.textContent = '✓ Ya Contactado';
+                contactedBtn.classList.add('already-contacted');
+                contactedBtn.disabled = true;
+            } else {
+                contactedBtn.textContent = '✓ Marcar como Contactado';
+                contactedBtn.classList.remove('already-contacted');
+                contactedBtn.disabled = false;
+            }
+
+            // Link de WhatsApp
+            const whatsappLink = document.getElementById('whatsappLink');
+            if (business.telefono && business.telefono !== 'N/A') {
+                const phone = business.telefono.replace(/[^0-9+]/g, '');
+                const message = encodeURIComponent(strategy.mensaje_personalizado);
+                whatsappLink.href = `https://wa.me/${phone}?text=${message}`;
+                whatsappLink.style.display = 'inline-flex';
+            } else {
+                whatsappLink.style.display = 'none';
+            }
+
+            // Mostrar modal
+            document.getElementById('contactModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            currentBusinessIndex = null;
+        }
+
+        function copyMessage() {
+            const messageText = document.getElementById('messageText').textContent;
+            navigator.clipboard.writeText(messageText).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copiado!';
+                btn.style.backgroundColor = '#4CAF50';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = '';
+                }, 2000);
+            }).catch(err => {
+                alert('Error al copiar: ' + err);
+            });
+        }
+
+        function markAsContacted() {
+            if (currentBusinessIndex === null) return;
+
+            saveContactedBusiness(currentBusinessIndex);
+
+            // Actualizar botón
+            const btn = document.getElementById('contactedBtn');
+            btn.textContent = '✓ Ya Contactado';
+            btn.classList.add('already-contacted');
+            btn.disabled = true;
+
+            // Actualizar tarjeta
+            const card = document.querySelector(`[data-business-index="${currentBusinessIndex}"]`);
+            if (card && !card.classList.contains('contacted')) {
+                card.classList.add('contacted');
+                const badge = document.createElement('div');
+                badge.className = 'contacted-badge';
+                badge.innerHTML = '✓ Contactado';
+                card.insertBefore(badge, card.firstChild);
+            }
+        }
+
+        // Cerrar modal con ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeContactModal();
+            }
+        });
+
+        // ===== FUNCIONES DE VISTA (EXISTENTES) =====
         function switchView(view) {
             const cardsView = document.getElementById('businessesGrid');
             const tableView = document.getElementById('tableView');
@@ -194,12 +457,18 @@
         function filterBusinesses() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase();
+            const filterPhone = document.getElementById('filterPhone').checked;
 
             if (currentView === 'cards') {
                 const cards = document.querySelectorAll('.business-card');
                 cards.forEach(card => {
                     const name = card.getAttribute('data-name');
-                    if (name.includes(filter)) {
+                    const hasPhone = card.getAttribute('data-has-phone') === 'true';
+
+                    const matchesName = name.includes(filter);
+                    const matchesPhone = !filterPhone || hasPhone;
+
+                    if (matchesName && matchesPhone) {
                         card.style.display = '';
                     } else {
                         card.style.display = 'none';
@@ -216,13 +485,6 @@
                     }
                 });
             }
-        }
-
-        // Copiar información al portapapeles
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Copiado al portapapeles: ' + text);
-            });
         }
     </script>
 </body>
