@@ -5,11 +5,20 @@ Aplicación Web Flask para búsqueda de negocios en Google Maps
 
 import sys
 import io
+import logging
 
 # Configurar UTF-8 para la salida en Windows
 if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+# Configurar logging detallado
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 from flask import Flask, render_template, request, jsonify, send_file
 from src.google_maps_scraper import GoogleMapsScraper
@@ -23,8 +32,9 @@ import threading
 
 app = Flask(__name__)
 
-# Crear directorio data si no existe (para Vercel)
+# Crear directorio data si no existe
 os.makedirs('data', exist_ok=True)
+logger.info(f"✅ Directorio 'data' verificado/creado en: {os.path.abspath('data')}")
 
 # Variable global para almacenar el estado de la búsqueda
 search_status = {
@@ -45,6 +55,7 @@ def search():
     global search_status
 
     if search_status['running']:
+        logger.warning("⚠️  Intento de búsqueda rechazado: ya hay una búsqueda en progreso")
         return jsonify({'error': 'Ya hay una búsqueda en progreso'}), 400
 
     # Obtener parámetros del formulario
@@ -52,15 +63,20 @@ def search():
     business_type = request.form.get('type')
     max_results = int(request.form.get('max', 20))
 
+    logger.info(f"🔍 Nueva búsqueda solicitada: {business_type} en {city} (max: {max_results})")
+
     if not city or not business_type:
+        logger.error("❌ Parámetros inválidos: ciudad o tipo de negocio faltante")
         return jsonify({'error': 'Ciudad y tipo de negocio son requeridos'}), 400
 
     # Iniciar búsqueda en un thread separado
     thread = threading.Thread(
         target=run_search,
-        args=(city, business_type, max_results)
+        args=(city, business_type, max_results),
+        name=f"SearchThread-{city}-{business_type}"
     )
     thread.start()
+    logger.info(f"🚀 Thread de búsqueda iniciado: {thread.name}")
 
     return jsonify({
         'message': 'Búsqueda iniciada',
@@ -78,23 +94,35 @@ def run_search(city, business_type, max_results):
     search_status['total'] = max_results
     search_status['message'] = 'Iniciando búsqueda...'
 
+    logger.info(f"📊 Estado inicial: running={search_status['running']}, total={max_results}")
+
     try:
+        logger.info("🌐 Iniciando GoogleMapsScraper (headless=True)...")
         with GoogleMapsScraper(headless=True) as scraper:
+            logger.info("✅ GoogleMapsScraper inicializado correctamente")
             search_status['message'] = 'Navegando a Google Maps...'
+            logger.info(f"🗺️  Buscando negocios: {business_type} en {city}")
+
             businesses = scraper.search_businesses(city, business_type, max_results)
+            logger.info(f"✅ Búsqueda completada: {len(businesses)} negocios encontrados")
 
         if businesses:
             # Guardar a CSV
             search_status['message'] = 'Guardando resultados...'
+            logger.info("💾 Guardando resultados en CSV...")
             filepath = DataExporter.to_csv(businesses)
+            logger.info(f"✅ Archivo CSV guardado: {filepath}")
             search_status['message'] = f'Completado: {len(businesses)} negocios encontrados'
         else:
+            logger.warning("⚠️  No se encontraron resultados")
             search_status['message'] = 'No se encontraron resultados'
 
     except Exception as e:
+        logger.error(f"❌ Error durante la búsqueda: {str(e)}", exc_info=True)
         search_status['message'] = f'Error: {str(e)}'
     finally:
         search_status['running'] = False
+        logger.info(f"🏁 Búsqueda finalizada. Estado final: running={search_status['running']}")
 
 @app.route('/status')
 def status():
@@ -222,6 +250,40 @@ if __name__ == '__main__':
     # Detectar si estamos en desarrollo o producción
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'True') == 'True'
+
+    # Información de diagnóstico de Playwright
+    logger.info("="*70)
+    logger.info("🚀 INICIANDO SERVIDOR - BÚSQUEDA DE NEGOCIOS EN GOOGLE MAPS")
+    logger.info("="*70)
+    logger.info(f"🐍 Python: {sys.version}")
+    logger.info(f"🌐 Puerto: {port}")
+    logger.info(f"🔧 Debug: {debug}")
+    logger.info(f"📁 Directorio de trabajo: {os.getcwd()}")
+    logger.info(f"💾 Directorio data: {os.path.abspath('data')}")
+
+    # Verificar Playwright
+    try:
+        from playwright.sync_api import sync_playwright
+        logger.info("✅ Playwright importado correctamente")
+        try:
+            with sync_playwright() as p:
+                chromium_path = p.chromium.executable_path
+                logger.info(f"✅ Chromium encontrado en: {chromium_path}")
+        except Exception as e:
+            logger.error(f"❌ Error al verificar Chromium: {str(e)}")
+    except Exception as e:
+        logger.error(f"❌ Error al importar Playwright: {str(e)}")
+
+    # Verificar variables de entorno relacionadas con Playwright
+    playwright_env_vars = ['PLAYWRIGHT_BROWSERS_PATH', 'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']
+    for var in playwright_env_vars:
+        value = os.environ.get(var)
+        if value:
+            logger.info(f"🔑 {var} = {value}")
+        else:
+            logger.info(f"🔑 {var} = (no configurada)")
+
+    logger.info("="*70)
 
     if debug:
         print("\n" + "="*70)

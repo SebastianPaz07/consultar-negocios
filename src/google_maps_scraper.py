@@ -5,7 +5,10 @@ Extrae información de negocios desde Google Maps
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 import time
+import logging
 from typing import List, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleMapsScraper:
@@ -25,10 +28,25 @@ class GoogleMapsScraper:
 
     def __enter__(self):
         """Permite usar el scraper con context manager (with statement)"""
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=self.headless)
-        self.page = self.browser.new_page()
-        return self
+        logger.info("🎭 Iniciando Playwright...")
+        try:
+            self.playwright = sync_playwright().start()
+            logger.info("✅ Playwright iniciado correctamente")
+
+            logger.info(f"🌐 Lanzando Chromium (headless={self.headless})...")
+            chromium_path = self.playwright.chromium.executable_path
+            logger.info(f"📂 Ejecutable de Chromium: {chromium_path}")
+
+            self.browser = self.playwright.chromium.launch(headless=self.headless)
+            logger.info("✅ Chromium lanzado exitosamente")
+
+            self.page = self.browser.new_page()
+            logger.info("✅ Nueva página creada")
+
+            return self
+        except Exception as e:
+            logger.error(f"❌ Error en __enter__: {str(e)}", exc_info=True)
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Cierra el navegador automáticamente"""
@@ -62,34 +80,48 @@ class GoogleMapsScraper:
         query = f"{business_type} en {city}"
         search_url = f"https://www.google.com/maps/search/{query.replace(' ', '+')}"
 
+        logger.info(f"🔍 Navegando a Google Maps: {search_url}")
         print(f"🔍 Navegando a Google Maps...")
         self.page.goto(search_url)
+        logger.info("✅ Página cargada")
 
         # Esperar a que carguen los resultados
         try:
+            logger.info("⏳ Esperando selector div[role='feed']...")
             self.page.wait_for_selector('div[role="feed"]', timeout=10000)
+            logger.info("✅ Resultados cargados correctamente")
             print("✓ Resultados cargados")
         except PlaywrightTimeout:
+            logger.warning("⚠️  Timeout esperando resultados")
             print("⚠ No se encontraron resultados o timeout")
             return []
 
         # Hacer scroll para cargar más resultados
+        logger.info(f"📜 Iniciando scroll para cargar hasta {max_results} resultados...")
         print(f"📜 Cargando resultados (máximo {max_results})...")
         self._scroll_results_panel(max_results)
 
         # Obtener todos los enlaces de negocios
+        logger.info("🔗 Extrayendo enlaces de negocios...")
         business_links = self._extract_business_links(max_results)
+        logger.info(f"✅ {len(business_links)} enlaces extraídos")
         print(f"✓ Encontrados {len(business_links)} negocios")
 
         # Extraer detalles de cada negocio
         businesses = []
+        logger.info(f"🏢 Iniciando extracción de detalles de {len(business_links)} negocios...")
         for idx, link in enumerate(business_links, 1):
+            logger.info(f"📍 Procesando negocio {idx}/{len(business_links)}: {link}")
             print(f"📍 Procesando {idx}/{len(business_links)}...")
             business_data = self._extract_business_details(link)
             if business_data:
                 businesses.append(business_data)
+                logger.info(f"✅ Negocio extraído: {business_data.get('nombre', 'N/A')}")
+            else:
+                logger.warning(f"⚠️  No se pudo extraer información del negocio {idx}")
             time.sleep(1)  # Delay para no ser detectado como bot
 
+        logger.info(f"🎉 Extracción completada: {len(businesses)} negocios procesados")
         return businesses
 
     def _scroll_results_panel(self, max_results: int):
