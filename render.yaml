@@ -6,13 +6,16 @@ services:
     plan: free
     buildCommand: |
       pip install -r requirements.txt
-      playwright install --with-deps chromium
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+      playwright install chromium
+      playwright install-deps chromium
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DEBUG
         value: False
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /opt/render/project/.cache/ms-playwright
     disk:
       name: data
       mountPath: /opt/render/project/src/data
